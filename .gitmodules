@@ -1,0 +1,3 @@
+[submodule "raw2dng"]
+	path = raw2dng
+	url = https://github.com/frederick623/raw2dng

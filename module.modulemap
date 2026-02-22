@@ -1,0 +1,4 @@
+module Raw2DngLibrary {
+    header "raw2dng.hpp"
+    requires cplusplus
+}
