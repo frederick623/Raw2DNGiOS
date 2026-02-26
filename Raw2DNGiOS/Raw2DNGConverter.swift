@@ -76,26 +76,21 @@ class Raw2DNGConverter: ObservableObject {
                 }
                 
                 let outputFile = self.getOutputFilename(for: rawFile)
+          
+                // Call the C++ conversion function
+                var r2d = Raw2DngConverter();
+                let error = r2d.raw2dng(
+                    std.string(rawFile.path.cString(using: .utf8)),
+                    std.string(rawFile.path.cString(using: .utf8))
+                )
                 
-                do {
-                    // Call the C++ conversion function
-                    var r2d = Raw2DngConverter();
-                    let success = r2d.raw2dng(
-                        std.string(rawFile.path),
-                        std.string(outputFile.path)
-                    )
-                    
-                    if success {
-                        successCount += 1
-                    } else {
-                        failCount += 1
-                        print("Failed to convert: \(rawFile.lastPathComponent)")
-                    }
-                } catch {
+                if error.empty() {
+                    successCount += 1
+                } else {
                     failCount += 1
-                    print("Error converting \(rawFile.lastPathComponent): \(error)")
+                    print("Failed to convert: \(std.string(rawFile.path.cString(using: .utf8))) - \(error)")
                 }
-                
+
                 // Update progress
                 DispatchQueue.main.async {
                     self.statusMessage = "Converted: \(successCount), Failed: \(failCount)"
@@ -119,8 +114,17 @@ class Raw2DNGConverter: ObservableObject {
     }
     
     private func getRawFiles(in folderURL: URL) -> [URL] {
+        let canAccess = folderURL.startAccessingSecurityScopedResource()
+            
+        // Ensure we release access when the function exits
+        defer {
+            if canAccess {
+                folderURL.stopAccessingSecurityScopedResource()
+            }
+        }
+    
         let fileManager = FileManager.default
-        
+            
         guard let enumerator = fileManager.enumerator(
             at: folderURL,
             includingPropertiesForKeys: [.isRegularFileKey],
@@ -132,6 +136,7 @@ class Raw2DNGConverter: ObservableObject {
         var rawFiles: [URL] = []
         
         for case let fileURL as URL in enumerator {
+            print("Found file: \(fileURL.lastPathComponent)")
             guard let resourceValues = try? fileURL.resourceValues(forKeys: [.isRegularFileKey]),
                   let isRegularFile = resourceValues.isRegularFile,
                   isRegularFile else {

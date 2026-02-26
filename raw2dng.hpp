@@ -8,7 +8,7 @@
 class Raw2DngConverter
 {
 public:
-    bool raw2dng(const std::string& rawFilename, const std::string& outFilename);
+    std::string raw2dng(const std::string& rawFilename, const std::string& outFilename);
     
 };
 
