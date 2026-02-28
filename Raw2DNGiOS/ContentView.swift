@@ -50,7 +50,7 @@ struct ContentView: View {
                     HStack {
                         Image(systemName: "folder.badge.plus")
                             .font(.title2)
-                        Text("Select Folder")
+                        Text("Select Files/Folder")
                             .font(.headline)
                     }
                     .frame(maxWidth: .infinity)
@@ -144,7 +144,7 @@ struct DocumentPicker: UIViewControllerRepresentable {
     @Environment(\.presentationMode) var presentationMode
     
     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.folder], asCopy: false)
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.image], asCopy: true)
         picker.delegate = context.coordinator
         picker.allowsMultipleSelection = false
         picker.shouldShowFileExtensions = true

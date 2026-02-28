@@ -22,20 +22,15 @@ class Raw2DNGConverter: ObservableObject {
     private let rawExtensions = ["cr2", "nef", "arw", "orf", "rw2", "dng", "raf", "raw", "3fr", "ari", "arw", "bay", "crw", "cr2", "cap", "data", "dcs", "dcr", "dng", "drf", "eip", "erf", "fff", "gpr", "iiq", "k25", "kdc", "mdc", "mef", "mos", "mrw", "nef", "nrw", "obm", "orf", "pef", "ptx", "pxn", "r3d", "raf", "raw", "rwl", "rw2", "rwz", "sr2", "srf", "srw", "x3f"]
     
     func convertFiles(in folderURL: URL, completion: @escaping (Bool, String) -> Void) {
-        // Request access to the folder
-        guard folderURL.startAccessingSecurityScopedResource() else {
-            DispatchQueue.main.async {
-                self.statusMessage = "Unable to access folder"
-                self.hasError = true
-            }
-            completion(false, "Unable to access folder")
-            return
-        }
-        
+        let canAccess = folderURL.startAccessingSecurityScopedResource()
+            
+        // Ensure we release access when the function exits
         defer {
-            folderURL.stopAccessingSecurityScopedResource()
+            if canAccess {
+                folderURL.stopAccessingSecurityScopedResource()
+            }
         }
-        
+    
         // Start conversion in background
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self else { return }
@@ -76,21 +71,41 @@ class Raw2DNGConverter: ObservableObject {
                 }
                 
                 let outputFile = self.getOutputFilename(for: rawFile)
-          
-                // Call the C++ conversion function
-                var r2d = Raw2DngConverter();
-                let error = r2d.raw2dng(
-                    std.string(rawFile.path.cString(using: .utf8)),
-                    std.string(rawFile.path.cString(using: .utf8))
-                )
                 
-                if error.empty() {
-                    successCount += 1
-                } else {
-                    failCount += 1
-                    print("Failed to convert: \(std.string(rawFile.path.cString(using: .utf8))) - \(error)")
-                }
+                let fileManager = FileManager.default
+                let tempInputURL = fileManager.temporaryDirectory.appendingPathComponent(rawFile.lastPathComponent)
+                try? fileManager.removeItem(at: tempInputURL)
+                
+                let coordinator = NSFileCoordinator()
+                var coordinationError: NSError?
+                
+                coordinator.coordinate(readingItemAt: rawFile, options: .forUploading, error: &coordinationError) { (coordinatedURL) in
+                    try? fileManager.copyItem(at: coordinatedURL, to: tempInputURL)
+                    
+                    
+                    if FileManager.default.fileExists(atPath: tempInputURL.path) {
+                        print("✅ File exists at: \(tempInputURL.path)")
+                    } else {
+                        print("❌ File DOES NOT exist at: \(tempInputURL.path)")
+                    }
+              
+                    // Call the C++ conversion function
+                    var r2d = Raw2DngConverter();
+                    let error = r2d.raw2dng(
+                        std.string(tempInputURL.path.cString(using: .utf8)),
+                        std.string(rawFile.path.cString(using: .utf8))
+                    )
+                    
+                    if error.empty() {
+                        successCount += 1
+                    } else {
+                        failCount += 1
+                        print("Failed to convert: \(std.string(rawFile.path.cString(using: .utf8))) - \(error)")
+                    }
 
+                }
+                
+                
                 // Update progress
                 DispatchQueue.main.async {
                     self.statusMessage = "Converted: \(successCount), Failed: \(failCount)"
@@ -122,7 +137,15 @@ class Raw2DNGConverter: ObservableObject {
                 folderURL.stopAccessingSecurityScopedResource()
             }
         }
-    
+        
+        var rawFiles: [URL] = []
+        
+        if folderURL.isFileURL
+        {
+            rawFiles.append(folderURL)
+            return rawFiles
+        }
+        
         let fileManager = FileManager.default
             
         guard let enumerator = fileManager.enumerator(
@@ -132,8 +155,6 @@ class Raw2DNGConverter: ObservableObject {
         ) else {
             return []
         }
-        
-        var rawFiles: [URL] = []
         
         for case let fileURL as URL in enumerator {
             print("Found file: \(fileURL.lastPathComponent)")

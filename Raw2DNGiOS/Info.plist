@@ -6,13 +6,19 @@
 	<array>
 		<string>This app needs external access to USB</string>
 	</array>
-	<key>UISupportsDocumentBrowser</key>
-	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>external-accessory</string>
 	</array>
 	<key>NSRemovableVolumesUsageDescription</key>
 	<string>This app needs access to your SD card to read and convert RAW image files.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app need photo library</string>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>This app need Document</string>
+	<key>UISupportsDocumentBrowser</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 </dict>
 </plist>
