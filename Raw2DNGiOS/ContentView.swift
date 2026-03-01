@@ -144,7 +144,7 @@ struct DocumentPicker: UIViewControllerRepresentable {
     @Environment(\.presentationMode) var presentationMode
     
     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.image], asCopy: true)
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.image], asCopy: false)
         picker.delegate = context.coordinator
         picker.allowsMultipleSelection = false
         picker.shouldShowFileExtensions = true
