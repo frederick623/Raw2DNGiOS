@@ -19,7 +19,7 @@ class Raw2DNGConverter: ObservableObject {
     @Published var statusMessage = ""
     @Published var hasError = false
     
-    private let rawExtensions = ["cr2", "nef", "arw", "orf", "rw2", "dng", "raf", "raw", "3fr", "ari", "arw", "bay", "crw", "cr2", "cap", "data", "dcs", "dcr", "drf", "eip", "erf", "fff", "gpr", "iiq", "k25", "kdc", "mdc", "mef", "mos", "mrw", "nef", "nrw", "obm", "orf", "pef", "ptx", "pxn", "r3d", "raf", "raw", "rwl", "rw2", "rwz", "sr2", "srf", "srw", "x3f"]
+    public static let rawExtensions = ["cr2", "nef", "arw", "orf", "rw2", "raf", "raw", "3fr", "ari", "arw", "bay", "crw", "cr2", "cap", "data", "dcs", "dcr", "drf", "eip", "erf", "fff", "gpr", "iiq", "k25", "kdc", "mdc", "mef", "mos", "mrw", "nef", "nrw", "obm", "orf", "pef", "ptx", "pxn", "r3d", "raf", "raw", "rwl", "rw2", "rwz", "sr2", "srf", "srw", "x3f"]
     
     func convertFiles(_ rawFiles: [URL], toFolder outputFolder: URL, completion: @escaping (Bool, String) -> Void) {
 

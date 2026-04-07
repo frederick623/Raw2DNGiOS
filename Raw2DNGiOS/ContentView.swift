@@ -86,7 +86,7 @@ struct ContentView: View {
                     HStack {
                         Image(systemName: "folder.badge.plus")
                             .font(.title2)
-                        Text("Select Output Folder")
+                        Text("Select Input/Output Folder")
                             .font(.headline)
                     }
                     .frame(maxWidth: .infinity)
@@ -120,7 +120,7 @@ struct ContentView: View {
                 // Output folder display
                 if let outputURL = outputFolder {
                     VStack(spacing: 10) {
-                        Text("Output Folder:")
+                        Text(showingFilePicker ? "Output Folder" : "Input/Output Folder:")
                             .font(.headline)
                         HStack {
                             Image(systemName: "folder.fill")
@@ -168,7 +168,7 @@ struct ContentView: View {
                 Spacer()
                 
                 // Info text
-                Text("Supported formats: CR2, NEF, ARW, DNG, ORF, RAF, and more")
+                Text("Supported formats: CR2, NEF, ARW, ORF, RAF, and more")
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .padding()
@@ -191,10 +191,41 @@ struct ContentView: View {
     }
     
     private var canConvert: Bool {
-        !selectedFiles.isEmpty && outputFolder != nil
+        outputFolder != nil
     }
     
+    private func getFiles(in folderURL: URL) -> [URL] {
+        let fileManager = FileManager.default
+        
+        // Define the keys we want to pre-fetch for better performance
+        let keys: [URLResourceKey] = [.isRegularFileKey]
+        
+        // Create an enumerator to look through the folder
+        guard let enumerator = fileManager.enumerator(
+            at: folderURL,
+            includingPropertiesForKeys: keys,
+            options: [.skipsHiddenFiles, .skipsPackageDescendants]
+        ) else { return [] }
+        
+        var matchedURLs: [URL] = []
+        
+        for case let fileURL as URL in enumerator {
+            // Check if the file extension (lowercased) is in your allowed list
+            if Raw2DNGConverter.rawExtensions.contains(fileURL.pathExtension.lowercased()) {
+                matchedURLs.append(fileURL)
+            }
+        }
+        
+        return matchedURLs
+    }
+
+    
     private func convertFiles() {
+        if selectedFiles.isEmpty
+        {
+            selectedFiles = getFiles(in: outputFolder!)
+        }
+        
         guard !selectedFiles.isEmpty, let output = outputFolder else { return }
         
         converter.convertFiles(selectedFiles, toFolder: output) { success, message in
@@ -213,16 +244,9 @@ struct FilesPicker: UIViewControllerRepresentable {
     
     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
         // Create document types for RAW files
-        let rawTypes: [UTType] = [
-            .data,  // Generic fallback
-            UTType(filenameExtension: "cr2") ?? .data,
-            UTType(filenameExtension: "nef") ?? .data,
-            UTType(filenameExtension: "arw") ?? .data,
-            UTType(filenameExtension: "dng") ?? .data,
-            UTType(filenameExtension: "orf") ?? .data,
-            UTType(filenameExtension: "raf") ?? .data,
-            UTType(filenameExtension: "rw2") ?? .data,
-        ]
+        let rawTypes: [UTType] = Raw2DNGConverter.rawExtensions.compactMap { ext in
+            UTType(filenameExtension: ext) ?? .data
+        }
         
         let picker = UIDocumentPickerViewController(forOpeningContentTypes: rawTypes, asCopy: false)
         picker.delegate = context.coordinator
